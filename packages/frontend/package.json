@@ -1,5 +1,5 @@
 {
-  "name": "@vini/frontend",
+  "name": "@zini/frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,8 @@
     "lint-staged": "lint-staged",
     "start": "next start",
     "prettier": "prettier --write .",
-    "copy-env": "cp .env.example .env"
+    "copy-env": "cp .env.example .env",
+    "prepare": "husky"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [

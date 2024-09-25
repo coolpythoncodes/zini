@@ -8,13 +8,14 @@
     "prettier": "lerna run prettier --scope \"@zini/frontend\"",
     "lint": "lerna run lint --scope \"@zini/frontend\"",
     "lint-staged": "lerna run lint-staged --scope \"@zini/frontend\"",
-    "copy-env": "lerna run copy-env --scope \"@zini/frontend\""
+    "copy-env": "lerna run copy-env --scope \"@zini/frontend\"",
+    "prepare": "husky"
   },
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {},
   "devDependencies": {
+    "husky": "^9.1.6",
     "lerna": "^8.1.8"
   }
 }
