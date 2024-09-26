@@ -5,6 +5,7 @@ import PageWrapper from "@/components/common/page-wrapper";
 import ElementList from "@/components/misc/element-list";
 import Link from "next/link";
 import DashboardHeader from "./components/dashbord-header";
+// import EmptyState from "@/components/common/empty-state";
 
 const DashboardPage = () => {
   //   const {setPage} = useUiStore();
@@ -24,6 +25,7 @@ const DashboardPage = () => {
           <div
           // className="grid grid-cols-2 gap-x-4"
           >
+            {/* <EmptyState text="Group details go here" /> */}
             <ElementList
               itemsCount={6}
               rootClassName="grid grid-cols-2 gap-x-4 gap-y-2"
@@ -49,7 +51,7 @@ const DashboardPage = () => {
           <h1 className="text-base font-medium leading-[18px] text-[#0A0F29]">
             Recent Transactions
           </h1>
-
+          {/* <EmptyState text="Transaction details go here" /> */}
           <ElementList itemsCount={2} rootClassName="grid gap-y-1">
             <div className="flex items-center justify-between rounded-[8px] border border-[#D7D9E4] bg-white px-4 py-5 shadow-[0px_4px_8px_0px_#0000000D]">
               <div className="flex items-center gap-x-3">

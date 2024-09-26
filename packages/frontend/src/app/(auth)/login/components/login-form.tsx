@@ -21,7 +21,10 @@ const loginFormSchema = object({
 type FormData = InferType<typeof loginFormSchema>;
 
 const LoginForm = () => {
-  const { isOpen, onOpen } = useDisclosure();
+  const {
+    isOpen,
+    // onOpen
+  } = useDisclosure();
   const router = useRouter();
   const {
     register,
