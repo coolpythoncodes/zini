@@ -38,6 +38,9 @@ contract ZiniSavings is ReentrancyGuard {
         uint256 debtAmount;
         bool isMember;
     }
+    // TODO:
+    // 1. Add loan status
+    // 2. display a user group
     struct Group {
         address[] members;
         uint256 monthlyContribution;
@@ -69,9 +72,10 @@ contract ZiniSavings is ReentrancyGuard {
     // State Variables    //
     //////////////////////////
     IERC20 public immutable token;
-    mapping(uint256 => Group) public groups;
+    mapping(int256 => Group) public groups;
+    mapping(address => int256[]) private userGroups;
     uint256 public groupCount;
-    mapping(address => mapping(uint256 => Loan)) public loans;
+    mapping(address => mapping(int256 => Loan)) public loans;
     uint256 public constant LOAN_DURATION = 90 days; // 3 months
     uint256 public constant LOAN_INTEREST_RATE = 5; // 5%
     uint256 public constant LOCK_PERIOD = 365 days; // 12 months
@@ -80,22 +84,22 @@ contract ZiniSavings is ReentrancyGuard {
     ///////////////////////////
     // Events               //
     //////////////////////////
-    event GroupCreated(uint256 indexed groupId, string name, address admin);
-    event MemberJoined(uint256 indexed groupId, address indexed member);
-    event DepositMade(uint256 indexed groupId, address member, uint256 amount);
+    event GroupCreated(int256 indexed groupId, string name, address admin);
+    event MemberJoined(int256 indexed groupId, address indexed member);
+    event DepositMade(int256 indexed groupId, address member, uint256 amount);
     event SavingsDeposited(
-        uint256 indexed groupId,
+        int256 indexed groupId,
         address member,
         uint256 amount
     );
     event LoanDistributed(
-        uint256 indexed groupId,
+        int256 indexed groupId,
         address borrower,
         uint256 amount,
         bool isFirstBatch
     );
     event LoanRepayment(
-        uint256 indexed groupId,
+        int256 indexed groupId,
         address borrower,
         uint256 amount
     );
@@ -112,26 +116,36 @@ contract ZiniSavings is ReentrancyGuard {
     //////////////////////////
     function createGroup(
         string memory _name,
-        uint256 _monthlyContribution,
-        address user
+        address user,
+        int256 _groupId
     ) external {
         groupCount++;
-        Group storage newGroup = groups[groupCount];
-        newGroup.monthlyContribution = _monthlyContribution;
+        Group storage newGroup = groups[_groupId];
+        // newGroup.monthlyContribution = _monthlyContribution;
         newGroup.creationTime = block.timestamp;
         newGroup.name = _name;
         newGroup.admin = msg.sender;
         newGroup.memberCount = 1;
-        _joinGroup(groupCount, user);
+        _joinGroup(_groupId, user);
 
-        emit GroupCreated(groupCount, _name, msg.sender);
+        emit GroupCreated(_groupId, _name, msg.sender);
     }
 
-    function joinGroup(uint256 _groupId, address user) external {
+    function setMonthlyContribution(int256 _groupId, uint256 _amount) external {
+        Group storage group = groups[_groupId];
+
+        require(
+            group.monthlyContribution == 0,
+            "Group Contribution already set"
+        );
+        group.monthlyContribution = _amount;
+    }
+
+    function joinGroup(int256 _groupId, address user) external {
         _joinGroup(_groupId, user);
     }
 
-    function deposit(uint256 _groupId) public payable {
+    function deposit(int256 _groupId) public payable {
         Group storage group = groups[_groupId];
         require(
             token.balanceOf(msg.sender) >= group.monthlyContribution,
@@ -150,7 +164,7 @@ contract ZiniSavings is ReentrancyGuard {
         emit SavingsDeposited(_groupId, msg.sender, group.monthlyContribution);
     }
 
-    function distributeLoans(uint256 _groupId) external {
+    function distributeLoans(int256 _groupId) external {
         Group storage group = groups[_groupId];
         require(group.members.length % 2 == 0, "Group size must be even");
         require(
@@ -202,7 +216,7 @@ contract ZiniSavings is ReentrancyGuard {
         }
     }
 
-    function repayLoan(uint256 _groupId, uint256 _amount) external {
+    function repayLoan(int256 _groupId, uint256 _amount) external {
         Group storage group = groups[_groupId];
         Loan storage loan = loans[msg.sender][_groupId];
         require(loan.totalAmount > 0, "No active loan");
@@ -244,9 +258,8 @@ contract ZiniSavings is ReentrancyGuard {
     ///////////////////////////
     // Internal Private Functions    //
     //////////////////////////
-    function _joinGroup(uint256 _groupId, address user) internal {
+    function _joinGroup(int256 _groupId, address user) internal {
         Group storage group = groups[_groupId];
-        require(_groupId <= groupCount && _groupId > 0, "Invalid group id");
         require(
             !groups[_groupId].addressToMember[user].isMember,
             "Already in group"
@@ -255,11 +268,12 @@ contract ZiniSavings is ReentrancyGuard {
         // group.isMember[msg.sender] = true;
         group.addressToMember[user].isMember = true;
         groups[_groupId].memberCount++;
+        userGroups[user].push(_groupId);
         emit MemberJoined(_groupId, msg.sender);
     }
 
     function _distributeLoansTERNAL(
-        uint256 _groupId,
+        int256 _groupId,
         uint256 startIndex,
         uint256 endIndex,
         uint256 loanAmount,
@@ -305,40 +319,44 @@ contract ZiniSavings is ReentrancyGuard {
     //////////////////////////
 
     function getGroupMonthlySavings(
-        uint256 _groupId
+        int256 _groupId
     ) external view returns (uint256) {
         return groups[_groupId].monthlyContribution;
     }
 
     function getGroupTotalSavings(
-        uint256 _groupId
+        int256 _groupId
     ) public view returns (uint256) {
         return groups[_groupId].totalSavings;
     }
 
-    function getOutStandingLoan(
-        uint256 _groupId
-    ) public view returns (uint256) {
+    function getOutStandingLoan(int256 _groupId) public view returns (uint256) {
         return loans[msg.sender][_groupId].totalAmount;
     }
 
-    function getAmountRepaid(uint256 _groupId) public view returns (uint256) {
+    function getAmountRepaid(int256 _groupId) public view returns (uint256) {
         return loans[msg.sender][_groupId].amountRepaid;
     }
 
     function getGroupTotalLoanGiveOut(
-        uint256 _groupId
+        int256 _groupId
     ) public view returns (uint256) {
         return groups[_groupId].loanGivenOut;
     }
 
     function getGroupTotalRepaidLoan(
-        uint256 _groupId
+        int256 _groupId
     ) public view returns (uint256) {
         return groups[_groupId].repaidLoan;
     }
 
     function getContractTokenBalance() public view returns (uint256) {
         return token.balanceOf(address(this));
+    }
+
+    function getUserGroups(
+        address user
+    ) external view returns (int256[] memory) {
+        return userGroups[user];
     }
 }
