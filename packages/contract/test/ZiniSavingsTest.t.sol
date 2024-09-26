@@ -19,9 +19,10 @@ contract ZiniSavingsTest is Test {
     uint256 public constant STARTING_ERC20_BALANCE = 10_000_000 ether;
     uint256 public constant MONTHLY_CONTRIBUTION = 10_000 ether;
     uint256 public constant CONTRACT_BALANCE = 100_000_000_000 ether;
+    int256 public constant GROUP_ID = -145899;
 
-    event GroupCreated(uint256 indexed groupId, string name, address admin);
-    event MemberJoined(uint256 indexed groupId, address member);
+    event GroupCreated(int256 indexed groupId, string name, address admin);
+    event MemberJoined(int256 indexed groupId, address member);
 
     function setUp() public {
         deployer = new DeployZini();
@@ -36,38 +37,47 @@ contract ZiniSavingsTest is Test {
 
     function testuserbalance() public view {
         vm.assertEq(ERC20Mock(token).balanceOf(USER_1), STARTING_ERC20_BALANCE);
+        vm.assertEq(ERC20Mock(token).balanceOf(USER_2), STARTING_ERC20_BALANCE);
+        vm.assertEq(ERC20Mock(token).balanceOf(USER_3), STARTING_ERC20_BALANCE);
+        vm.assertEq(ERC20Mock(token).balanceOf(USER_4), STARTING_ERC20_BALANCE);
+        vm.assertEq(
+            ERC20Mock(token).balanceOf(address(ziniSavings)),
+            CONTRACT_BALANCE
+        );
     }
 
     modifier _creategroup() {
         vm.startPrank(USER_1);
-        ziniSavings.createGroup("Flex", MONTHLY_CONTRIBUTION, USER_1);
+        ziniSavings.createGroup("Flex", USER_1, GROUP_ID);
+        ziniSavings.setMonthlyContribution(GROUP_ID, MONTHLY_CONTRIBUTION);
         vm.stopPrank();
         _;
     }
 
     modifier _creategroupAndDeposit() {
         vm.startPrank(USER_1);
-        ziniSavings.createGroup("Flex", MONTHLY_CONTRIBUTION, USER_1);
+        ziniSavings.createGroup("Flex", USER_1, GROUP_ID);
+        ziniSavings.setMonthlyContribution(GROUP_ID, MONTHLY_CONTRIBUTION);
         ERC20Mock(token).approve(address(ziniSavings), MONTHLY_CONTRIBUTION);
-        ziniSavings.deposit(1);
+        ziniSavings.deposit(GROUP_ID);
         vm.stopPrank();
 
         vm.startPrank(USER_2);
-        ziniSavings.joinGroup(1, address(USER_2));
+        ziniSavings.joinGroup(GROUP_ID, address(USER_2));
         ERC20Mock(token).approve(address(ziniSavings), MONTHLY_CONTRIBUTION);
-        ziniSavings.deposit(1);
+        ziniSavings.deposit(GROUP_ID);
         vm.stopPrank();
 
         vm.startPrank(USER_3);
-        ziniSavings.joinGroup(1, address(USER_3));
+        ziniSavings.joinGroup(GROUP_ID, address(USER_3));
         ERC20Mock(token).approve(address(ziniSavings), MONTHLY_CONTRIBUTION);
-        ziniSavings.deposit(1);
+        ziniSavings.deposit(GROUP_ID);
         vm.stopPrank();
 
         vm.startPrank(USER_4);
-        ziniSavings.joinGroup(1, address(USER_4));
+        ziniSavings.joinGroup(GROUP_ID, address(USER_4));
         ERC20Mock(token).approve(address(ziniSavings), MONTHLY_CONTRIBUTION);
-        ziniSavings.deposit(1);
+        ziniSavings.deposit(GROUP_ID);
         vm.stopPrank();
         _;
     }
@@ -75,36 +85,35 @@ contract ZiniSavingsTest is Test {
     function testcreategroup() public {
         vm.startPrank(USER_1);
         vm.expectEmit(true, false, false, false, address(ziniSavings));
-        emit GroupCreated(1, "Flex", address(USER_1));
-        ziniSavings.createGroup("Flex", MONTHLY_CONTRIBUTION, USER_1);
+        emit GroupCreated(GROUP_ID, "Flex", address(USER_1));
+        ziniSavings.createGroup("Flex", USER_1, GROUP_ID);
         vm.stopPrank();
     }
 
     function testGroupMonthlySavings() public _creategroup {
-        uint256 monthlySavings = ziniSavings.getGroupMonthlySavings(1);
+        uint256 monthlySavings = ziniSavings.getGroupMonthlySavings(GROUP_ID);
         assertEq(monthlySavings, MONTHLY_CONTRIBUTION);
     }
 
     function testJoinGroup() public _creategroup {
         vm.startPrank(USER_2);
         vm.expectEmit(true, true, false, false, address(ziniSavings));
-        emit MemberJoined(1, USER_2);
-        ziniSavings.joinGroup(1, address(USER_2));
-
+        emit MemberJoined(GROUP_ID, USER_2);
+        ziniSavings.joinGroup(GROUP_ID, address(USER_2));
         vm.stopPrank();
     }
 
     function testDeposit() public _creategroup {
         vm.startPrank(USER_1);
         ERC20Mock(token).approve(address(ziniSavings), MONTHLY_CONTRIBUTION);
-        ziniSavings.deposit(1);
+        ziniSavings.deposit(GROUP_ID);
         uint256 ziniBalance = ERC20Mock(token).balanceOf(address(ziniSavings));
         vm.stopPrank();
-        assertEq(ziniBalance, MONTHLY_CONTRIBUTION);
+        assertEq(ziniBalance, MONTHLY_CONTRIBUTION + CONTRACT_BALANCE);
     }
 
     function testgroupDeposit() public _creategroupAndDeposit {
-        uint256 group1TotalSavings = ziniSavings.getGroupTotalSavings(1);
+        uint256 group1TotalSavings = ziniSavings.getGroupTotalSavings(GROUP_ID);
         assertEq(group1TotalSavings, MONTHLY_CONTRIBUTION * 4);
     }
 
@@ -112,7 +121,7 @@ contract ZiniSavingsTest is Test {
         uint256 user1BalanceBefore = ERC20Mock(token).balanceOf(USER_1);
 
         vm.startPrank(USER_1);
-        ziniSavings.distributeLoans(1);
+        ziniSavings.distributeLoans(GROUP_ID);
         vm.stopPrank();
         uint256 user1BalanceAfter = ERC20Mock(token).balanceOf(USER_1);
         uint256 loan = user1BalanceAfter - user1BalanceBefore;
@@ -122,20 +131,20 @@ contract ZiniSavingsTest is Test {
 
     function testGetUserOutStandingLoan() public _creategroupAndDeposit {
         vm.startPrank(USER_1);
-        ziniSavings.distributeLoans(1);
-        uint256 USER1_LOAN = ziniSavings.getOutStandingLoan(1);
+        ziniSavings.distributeLoans(GROUP_ID);
+        uint256 USER1_LOAN = ziniSavings.getOutStandingLoan(GROUP_ID);
         console.log(USER1_LOAN);
         vm.stopPrank();
     }
 
     function testRepayLoan() public _creategroupAndDeposit {
         vm.startPrank(USER_1);
-        ziniSavings.distributeLoans(1);
+        ziniSavings.distributeLoans(GROUP_ID);
         ERC20Mock(token).approve(
             address(ziniSavings),
             MONTHLY_CONTRIBUTION * 2
         );
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
         vm.stopPrank();
     }
 
@@ -144,16 +153,16 @@ contract ZiniSavingsTest is Test {
         _creategroupAndDeposit
     {
         vm.startPrank(USER_1);
-        ziniSavings.distributeLoans(1);
+        ziniSavings.distributeLoans(GROUP_ID);
         ERC20Mock(token).approve(
             address(ziniSavings),
             MONTHLY_CONTRIBUTION * 5
         );
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
-        uint256 user1Loan = ziniSavings.getOutStandingLoan(1);
-        uint256 user1AmountRepaid = ziniSavings.getAmountRepaid(1);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
+        uint256 user1Loan = ziniSavings.getOutStandingLoan(GROUP_ID);
+        uint256 user1AmountRepaid = ziniSavings.getAmountRepaid(GROUP_ID);
         vm.stopPrank();
 
         vm.startPrank(USER_2);
@@ -161,12 +170,12 @@ contract ZiniSavingsTest is Test {
             address(ziniSavings),
             MONTHLY_CONTRIBUTION * 5
         );
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
-        ziniSavings.repayLoan(1, MONTHLY_CONTRIBUTION);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
+        ziniSavings.repayLoan(GROUP_ID, MONTHLY_CONTRIBUTION);
 
-        uint256 user2Loan = ziniSavings.getOutStandingLoan(1);
-        uint256 user2AmountRepaid = ziniSavings.getAmountRepaid(1);
+        uint256 user2Loan = ziniSavings.getOutStandingLoan(GROUP_ID);
+        uint256 user2AmountRepaid = ziniSavings.getAmountRepaid(GROUP_ID);
 
         vm.stopPrank();
 
@@ -176,7 +185,7 @@ contract ZiniSavingsTest is Test {
         uint256 user3BalanceBefore = ERC20Mock(token).balanceOf(USER_3);
         uint256 user4BalanceBefore = ERC20Mock(token).balanceOf(USER_4);
 
-        ziniSavings.distributeLoans(1);
+        ziniSavings.distributeLoans(GROUP_ID);
 
         uint256 user3BalanceAfter = ERC20Mock(token).balanceOf(USER_3);
         uint256 loan = user3BalanceAfter - user3BalanceBefore;
@@ -188,7 +197,9 @@ contract ZiniSavingsTest is Test {
         assert(user3BalanceAfter >= user3BalanceBefore);
         assertEq(loan2, MONTHLY_CONTRIBUTION * 3);
 
-        uint256 groupTotalRepaidLoan = ziniSavings.getGroupTotalRepaidLoan(1);
+        uint256 groupTotalRepaidLoan = ziniSavings.getGroupTotalRepaidLoan(
+            GROUP_ID
+        );
         console.log("Group total loan repaid: ", groupTotalRepaidLoan);
         uint256 groupTotalLoan = ziniSavings.getGroupTotalLoanGiveOut(1);
         console.log("Group total loan given out: ", groupTotalLoan);
