@@ -5,15 +5,32 @@ import PageWrapper from "@/components/common/page-wrapper";
 import ElementList from "@/components/misc/element-list";
 import Link from "next/link";
 import DashboardHeader from "./components/dashbord-header";
+import { getContract } from "thirdweb";
+import { client } from "@/app/client";
+import { defineChain } from "thirdweb/chains";
+import { contractAddress } from "@/contract";
+import { useAuthContext } from "@/context/AuthContext";
+import { useCallback, useEffect, useState } from "react";
+import { useFetchGroup } from "@/hooks/useFetchGroup";
+import { useFetchGroups } from "@/hooks/useFetchGroups";
+
 // import EmptyState from "@/components/common/empty-state";
 
 const DashboardPage = () => {
-  //   const {setPage} = useUiStore();
-  //   useEffect(() => {
-  //     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  //     useUiStore.persist.rehydrate();
-  //   }, []);
-  //   console.log("ui state", ui);
+  const liskSepolia = defineChain(4202);
+  const { userGroupId } = useAuthContext()
+  const [userGroup, setUserGroup] = useState<any>([]);
+
+  const contract = getContract({
+    client: client,
+    chain: liskSepolia,
+    address: contractAddress,
+  })
+
+  // const groupInfo = useCallback()
+  console.log(userGroupId);
+
+
   return (
     <main className="min-h-screen">
       <DashboardHeader />

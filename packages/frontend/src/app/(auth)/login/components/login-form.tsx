@@ -1,5 +1,6 @@
 "use client";
 
+import { client } from "@/app/client";
 import FormErrorTextMessage from "@/components/common/form-error-text-message";
 import { Icons } from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,22 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Loader2, Lock, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { ConnectButton } from "thirdweb/react";
+import { inAppWallet } from "thirdweb/wallets";
 import { object, string, type InferType } from "yup";
+import { defineChain } from "thirdweb/chains";
+import { useActiveAccount, useActiveWallet, useReadContract } from "thirdweb/react";
+import { useContext, useEffect } from "react";
+import { getContract } from "thirdweb";
+import { abi, contractAddress } from "@/contract";
+import { AuthContext, useAuthContext } from "@/context/AuthContext";
+
+
+
+const liskSepolia = defineChain(4202);
 
 const loginFormSchema = object({
-  name: string().required("Name is required"),
+  name: string().required("Telegram username is required"),
   phoneNumber: string().required("Phone number is required"),
   password: string().required("Password is required"),
 }).required();
@@ -21,11 +34,34 @@ const loginFormSchema = object({
 type FormData = InferType<typeof loginFormSchema>;
 
 const LoginForm = () => {
+  const account = useActiveAccount();
+  const wallet = useActiveWallet();
+  const router = useRouter();
+  const { userGroupId, setUserGroupId } = useAuthContext()
+  useEffect(() => {
+    if (account || wallet) {
+      router.push('/dashboard')
+    }
+  }, [account, wallet]);
+
+  const contract = getContract({
+    client: client,
+    chain: liskSepolia,
+    address: contractAddress,
+    // abi: abi, // Uncomment and provide ABI if needed
+  });
+
+
+
+
+  console.log(userGroupId);
+
+
+
   const {
     isOpen,
     // onOpen
   } = useDisclosure();
-  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -44,7 +80,7 @@ const LoginForm = () => {
           <div className="relative rounded bg-[#F8FDF5]">
             <Input
               className="h-[54px] rounded pl-9"
-              placeholder="Name"
+              placeholder="Telegram username"
               {...register("name")}
             />
             <Icons.profile className="absolute left-0 top-2 m-2.5 h-5 w-5 text-muted-foreground" />
@@ -52,7 +88,7 @@ const LoginForm = () => {
           <FormErrorTextMessage errors={errors.name} />
         </div>
 
-        <div className="grid gap-y-1">
+        {/* <div className="grid gap-y-1">
           <div className="relative rounded bg-[#F8FDF5]">
             <Input
               className="h-[54px] rounded pl-9"
@@ -62,9 +98,9 @@ const LoginForm = () => {
             <Phone className="absolute left-0 top-2 m-2.5 h-5 w-5 text-muted-foreground" />
           </div>
           <FormErrorTextMessage errors={errors.phoneNumber} />
-        </div>
+        </div> */}
 
-        <div className="grid gap-y-1">
+        {/* <div className="grid gap-y-1">
           <div className="relative rounded bg-[#F8FDF5]">
             <Input
               type="password"
@@ -75,14 +111,30 @@ const LoginForm = () => {
             <Lock className="absolute left-0 top-2 m-2.5 h-5 w-5 text-muted-foreground" />
           </div>
           <FormErrorTextMessage errors={errors.phoneNumber} />
-        </div>
+        </div> */}
       </div>
-      <Button
+      {/* <Button
       // onClick={onOpen} disabled={isOpen}
       >
         {isOpen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Sign up
-      </Button>
+      </Button> */}
+      <ConnectButton
+        client={client}
+        accountAbstraction={{
+          chain: liskSepolia,
+          sponsorGas: true
+        }}
+        wallets={[
+          inAppWallet({
+            auth: {
+              options: [
+                "phone"
+              ]
+            }
+          })
+        ]}
+      />
     </form>
   );
 };
