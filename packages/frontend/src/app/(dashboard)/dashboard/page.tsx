@@ -5,6 +5,7 @@ import PageWrapper from "@/components/common/page-wrapper";
 import ElementList from "@/components/misc/element-list";
 import Link from "next/link";
 import DashboardHeader from "./components/dashbord-header";
+<<<<<<< HEAD
 import { getContract } from "thirdweb";
 import { client } from "@/app/client";
 import { defineChain } from "thirdweb/chains";
@@ -15,6 +16,9 @@ import { useFetchGroup } from "@/hooks/useFetchGroup";
 import { useReadContract } from "thirdweb/react";
 
 
+=======
+import { routes } from "@/lib/routes";
+>>>>>>> a7751dd2c23654781342c4ebaabfbe74c701d829
 // import EmptyState from "@/components/common/empty-state";
 
 const DashboardPage = () => {
@@ -61,7 +65,7 @@ const DashboardPage = () => {
               itemsCount={6}
               rootClassName="grid grid-cols-2 gap-x-4 gap-y-2"
             >
-              <Link href="/">
+              <Link href={routes.groupById("1")}>
                 <div className="space-y-8 rounded-[8px] border border-[#D7D9E4] bg-white p-4 shadow-[0px_4px_8px_0px_#0000000D]">
                   <Icons.bitcoinBag className="h-10 w-10" />
                   <div className="space-y-1 font-normal">
