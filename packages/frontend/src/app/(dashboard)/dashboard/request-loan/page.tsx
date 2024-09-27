@@ -18,9 +18,9 @@ import numeral from "numeral";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type InferType, number, object, string } from "yup";
-import DepositModal from "./deposit-modal";
+import RequestLoanModal from "./request-loan-modal";
 
-const depositSchema = object({
+const requestLoanSchema = object({
   group: string().required("group is required"),
   amount: number()
     .positive("Invalid input")
@@ -29,22 +29,21 @@ const depositSchema = object({
     .required("Amount is required"),
 });
 
-type FormData = InferType<typeof depositSchema>;
+type FormData = InferType<typeof requestLoanSchema>;
 
-const DepositPage = () => {
+const RequestLoanPage = () => {
   const { setPage } = useUiStore();
   const { onOpen, onClose, isOpen } = useDisclosure();
 
   const {
     register,
     handleSubmit,
-    control,
     setValue,
+    control,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: yupResolver(depositSchema),
+    resolver: yupResolver(requestLoanSchema),
   });
-
   const onSubmit = (data: FormData) => {
     console.log(data);
     onOpen();
@@ -60,20 +59,21 @@ const DepositPage = () => {
     useUiStore.persist.rehydrate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   return (
     <>
-      <DepositModal {...{ isOpen, onClose }} />
-      <main className="pt-4">
+      <RequestLoanModal {...{ isOpen, onClose }} />
+      <main className="space-y-4 pt-4">
         <PageWrapper>
           <div className="flex items-center">
             <BackButton />
-            <PageTitle text="Deposit" />
+            <PageTitle text="Request Loan" />
           </div>
+
           <>
             <h1 className="py-4 text-base font-medium leading-[18px] text-[#0A0F29]">
-              Select a group to make a deposit
+              Select a group to request loan
             </h1>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
                 <Controller
@@ -124,11 +124,11 @@ const DepositPage = () => {
               <div className="space-y-3 rounded-lg border border-[#D7D9E4] bg-[#F8FDF5] px-4 py-7 shadow-[0px_4px_8px_0px_#0000000D]">
                 <div className="space-y-4">
                   <h2 className="text-center text-base font-medium text-[#0A0F29]">
-                    Make a deposit
+                    Reqest loan
                   </h2>
                   <div>
                     <Input
-                      placeholder="Enter deposit amount"
+                      placeholder="Enter amount"
                       className="tect-base font-medium text-[#696F8C] placeholder:text-[#696F8C]"
                       {...register("amount")}
                     />
@@ -152,13 +152,10 @@ const DepositPage = () => {
               </div>
             </form>
           </>
-          {/* <div className="shadow-[0px_4px_8px_0px_#0000000D] bg-[#F8FDF5] px-4 py-7 space-y-3">
-                    <h2 className="text-center text-[#0A0F29] text-base font-medium">Make a deposit</h2>
-                </div> */}
         </PageWrapper>
       </main>
     </>
   );
 };
 
-export default DepositPage;
+export default RequestLoanPage;

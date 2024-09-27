@@ -6,3 +6,26 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const amounts = [10000, 20000, 30000];
+
+export const groups = [
+  {
+    name: "Group 1",
+    value: "group-1",
+    amount: "#40,000",
+  },
+  {
+    name: "Group 2",
+    value: "group-2",
+    amount: "#10,000",
+  },
+  {
+    name: "Group 3",
+    value: "group-3",
+    amount: "#60,000",
+  },
+  {
+    name: "Group 4",
+    value: "group-4",
+    amount: "#100,000",
+  },
+];

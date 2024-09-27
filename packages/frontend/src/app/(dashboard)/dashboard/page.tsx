@@ -13,6 +13,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { useFetchGroup } from "@/hooks/useFetchGroup";
 import { useFetchGroups } from "@/hooks/useFetchGroups";
+import { useReadContract } from "thirdweb/react";
 
 // import EmptyState from "@/components/common/empty-state";
 
@@ -30,6 +31,15 @@ const DashboardPage = () => {
   // const groupInfo = useCallback()
   console.log(userGroupId);
 
+  const { data: result, isLoading: idLoading, refetch: refectUserGroupId } = useReadContract({
+    contract,
+    method: "function getUserGroups(int256[]) returns (tuple[])",
+    params: [userGroupId]
+  })
+
+  console.log(`Result is given as`, result);
+
+
 
   return (
     <main className="min-h-screen">
@@ -40,6 +50,7 @@ const DashboardPage = () => {
             Saving groups
           </h1>
           <div
+          // 456
           // className="grid grid-cols-2 gap-x-4"
           >
             {/* <EmptyState text="Group details go here" /> */}
