@@ -5,7 +5,6 @@ import PageWrapper from "@/components/common/page-wrapper";
 import ElementList from "@/components/misc/element-list";
 import Link from "next/link";
 import DashboardHeader from "./components/dashbord-header";
-<<<<<<< HEAD
 import { getContract } from "thirdweb";
 import { client } from "@/app/client";
 import { defineChain } from "thirdweb/chains";
@@ -16,9 +15,16 @@ import { useFetchGroup } from "@/hooks/useFetchGroup";
 import { useReadContract } from "thirdweb/react";
 
 
-=======
 import { routes } from "@/lib/routes";
->>>>>>> a7751dd2c23654781342c4ebaabfbe74c701d829
+import { getContract } from "thirdweb";
+import { client } from "@/app/client";
+import { defineChain } from "thirdweb/chains";
+import { contractAddress } from "@/contract";
+import { useAuthContext } from "@/context/AuthContext";
+import { useCallback, useEffect, useState } from "react";
+import { useFetchGroup } from "@/hooks/useFetchGroup";
+import { useFetchGroups } from "@/hooks/useFetchGroups";
+
 // import EmptyState from "@/components/common/empty-state";
 
 const DashboardPage = () => {
