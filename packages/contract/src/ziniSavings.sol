@@ -317,6 +317,41 @@ contract ZiniSavings is ReentrancyGuard {
     ///////////////////////////
     // Public View Functions    //
     //////////////////////////
+    struct GroupInfo {
+        uint256 monthlyContribution;
+        uint256 totalSavings;
+        uint256 loanGivenOut;
+        uint256 repaidLoan;
+        uint256 creationTime;
+        string name;
+        address admin;
+        uint256 memberCount;
+    }
+
+    function getUserGroups(
+        int256[] memory groupIds
+    ) public view returns (GroupInfo[] memory) {
+        GroupInfo[] memory groupInfos = new GroupInfo[](groupIds.length);
+
+        for (uint256 i = 0; i < groupIds.length; i++) {
+            int256 groupId = groupIds[i];
+
+            Group storage group = groups[groupId];
+
+            groupInfos[i] = GroupInfo({
+                monthlyContribution: group.monthlyContribution,
+                totalSavings: group.totalSavings,
+                loanGivenOut: group.loanGivenOut,
+                repaidLoan: group.repaidLoan,
+                creationTime: group.creationTime,
+                name: group.name,
+                admin: group.admin,
+                memberCount: group.memberCount
+            });
+        }
+
+        return groupInfos;
+    }
 
     function getGroupMonthlySavings(
         int256 _groupId
