@@ -125,7 +125,6 @@ contract ZiniSavings is ReentrancyGuard {
         newGroup.creationTime = block.timestamp;
         newGroup.name = _name;
         newGroup.admin = msg.sender;
-        newGroup.memberCount = 1;
         _joinGroup(_groupId, user);
 
         emit GroupCreated(_groupId, _name, msg.sender);
@@ -328,7 +327,7 @@ contract ZiniSavings is ReentrancyGuard {
         uint256 memberCount;
     }
 
-    function getUserGroups(
+    function getGroups(
         int256[] memory groupIds
     ) public view returns (GroupInfo[] memory) {
         GroupInfo[] memory groupInfos = new GroupInfo[](groupIds.length);
