@@ -39,6 +39,7 @@ const RepayLoan = () => {
   } = useForm<FormData>({
     resolver: yupResolver(repayLoanSchema),
   });
+
   const onSubmit = (data: FormData) => {
     console.log(data);
     onOpen();
@@ -57,7 +58,7 @@ const RepayLoan = () => {
 
   return (
     <>
-      <RepayLoanModal {...{ isOpen, onOpen, onClose }} />
+      <RepayLoanModal {...{ isOpen, onClose }} />
       <main className="space-y-4 pt-4">
         <PageWrapper>
           <div className="flex items-center">
