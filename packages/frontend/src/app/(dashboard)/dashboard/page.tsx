@@ -8,12 +8,12 @@ import DashboardHeader from "./components/dashbord-header";
 import { getContract } from "thirdweb";
 import { client } from "@/app/client";
 import { defineChain } from "thirdweb/chains";
-import { contractAddress } from "@/contract";
+import { abi, contractAddress } from "@/contract";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { useFetchGroup } from "@/hooks/useFetchGroup";
-import { useFetchGroups } from "@/hooks/useFetchGroups";
 import { useReadContract } from "thirdweb/react";
+
 
 // import EmptyState from "@/components/common/empty-state";
 
@@ -26,18 +26,21 @@ const DashboardPage = () => {
     client: client,
     chain: liskSepolia,
     address: contractAddress,
+    abi: abi,
   })
 
   // const groupInfo = useCallback()
   console.log(userGroupId);
 
-  const { data: result, isLoading: idLoading, refetch: refectUserGroupId } = useReadContract({
+  const { data: groupsData, isLoading, error } = useReadContract({
     contract,
-    method: "function getUserGroups(int256[]) returns (tuple[])",
-    params: [userGroupId]
-  })
+    method: "function getGroups(int256[]) view returns (tuple(uint256,uint256,uint256,uint256,uint256,string,address,uint256)[])",
+    params: [userGroupId],
+  });
 
-  console.log(`Result is given as`, result);
+
+
+  console.log(`Result is given as`, groupsData);
 
 
 

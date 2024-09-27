@@ -16,10 +16,11 @@ import { inAppWallet } from "thirdweb/wallets";
 import { object, string, type InferType } from "yup";
 import { defineChain } from "thirdweb/chains";
 import { useActiveAccount, useActiveWallet, useReadContract } from "thirdweb/react";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { getContract } from "thirdweb";
 import { abi, contractAddress } from "@/contract";
 import { AuthContext, useAuthContext } from "@/context/AuthContext";
+import { createUser } from "@/actions/actions";
 
 
 
@@ -27,8 +28,8 @@ const liskSepolia = defineChain(4202);
 
 const loginFormSchema = object({
   name: string().required("Telegram username is required"),
-  phoneNumber: string().required("Phone number is required"),
-  password: string().required("Password is required"),
+  // phoneNumber: string().required("Phone number is required"),
+  // password: string().required("Password is required"),
 }).required();
 
 type FormData = InferType<typeof loginFormSchema>;
@@ -37,12 +38,13 @@ const LoginForm = () => {
   const account = useActiveAccount();
   const wallet = useActiveWallet();
   const router = useRouter();
-  const { userGroupId, setUserGroupId } = useAuthContext()
-  useEffect(() => {
-    if (account || wallet) {
-      router.push('/dashboard')
-    }
-  }, [account, wallet]);
+  const { userGroupId, setUserGroupId } = useAuthContext();
+
+  // useEffect(() => {
+  //   if (account || wallet) {
+  //     router.push('/dashboard')
+  //   }
+  // }, [account, wallet]);
 
   const contract = getContract({
     client: client,
@@ -51,12 +53,7 @@ const LoginForm = () => {
     // abi: abi, // Uncomment and provide ABI if needed
   });
 
-
-
-
   console.log(userGroupId);
-
-
 
   const {
     isOpen,
@@ -69,9 +66,17 @@ const LoginForm = () => {
   } = useForm<FormData>({
     resolver: yupResolver(loginFormSchema),
   });
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     console.log(data);
-    router.replace(routes.dashboard);
+    // router.replace(routes.dashboard);
+    const params = {
+      address: String(account?.address),
+      username: String(data.name)
+    }
+
+    await createUser(params);
+
+    router.push("/dashboard")
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-[21px]">
@@ -113,13 +118,13 @@ const LoginForm = () => {
           <FormErrorTextMessage errors={errors.phoneNumber} />
         </div> */}
       </div>
-      {/* <Button
+      {account?.address && <Button
       // onClick={onOpen} disabled={isOpen}
       >
         {isOpen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Sign up
-      </Button> */}
-      <ConnectButton
+      </Button>}
+      {!account && <ConnectButton
         client={client}
         accountAbstraction={{
           chain: liskSepolia,
@@ -134,7 +139,7 @@ const LoginForm = () => {
             }
           })
         ]}
-      />
+      />}
     </form>
   );
 };

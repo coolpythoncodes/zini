@@ -15,10 +15,17 @@ import { amounts, cn, groups } from "@/lib/utils";
 import { useUiStore } from "@/store/useUiStore";
 import { yupResolver } from "@hookform/resolvers/yup";
 import numeral from "numeral";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type InferType, number, object, string } from "yup";
 import DepositModal from "./deposit-modal";
+import { useSendTransaction } from "thirdweb/react";
+import { ContractOptions, getContract, prepareContractCall } from "thirdweb";
+import { client } from "@/app/client";
+import { contractAddress } from "@/contract";
+import { defineChain } from "thirdweb/chains";
+import { bigint } from "zod";
+import { contractInstance } from "@/lib/libs";
 
 const depositSchema = object({
   group: string().required("group is required"),
@@ -34,6 +41,29 @@ type FormData = InferType<typeof depositSchema>;
 const DepositPage = () => {
   const { setPage } = useUiStore();
   const { onOpen, onClose, isOpen } = useDisclosure();
+  const [amount, setAmount] = useState<number>(0);
+
+  const { mutate: sendTransaction } = useSendTransaction();
+
+
+  const liskSepolia = defineChain(4202)
+
+
+  const onClick = async (amount: bigint) => {
+    const tx1 = prepareContractCall({
+      contract: contractInstance,
+      method: "function approve(address, uint256) returns(bool)",
+      params: [contractAddress, amount]
+    })
+
+    const tx2 = prepareContractCall({
+      contract: contractInstance,
+      method: "function deposit(int256)",
+      params: [0n]
+    })
+
+    sendTransaction(tx1)
+  }
 
   const {
     register,
@@ -91,6 +121,7 @@ const DepositPage = () => {
                             value={group.value}
                             id={group.value}
                             className="hidden"
+                            onClick={() => setAmount(Number(group.amount))}
                           />
                           <Label htmlFor={group.value}>
                             <div
@@ -104,7 +135,7 @@ const DepositPage = () => {
                               <Icons.bitcoinBag className="h-10 w-10" />
                               <div className="space-y-1 font-normal">
                                 <p className="text-xs leading-[14px] text-[#098C28]">
-                                  {group.amount}
+                                  #{group.amount}
                                 </p>
                                 <p className="text-base leading-[18px] text-[#0A0F29]">
                                   {group.name}
@@ -130,7 +161,7 @@ const DepositPage = () => {
                     <Input
                       placeholder="Enter deposit amount"
                       className="tect-base font-medium text-[#696F8C] placeholder:text-[#696F8C]"
-                      {...register("amount")}
+                      value={amount}
                     />
                     <FormErrorTextMessage errors={errors.amount} />
                   </div>
