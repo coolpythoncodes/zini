@@ -1,7 +1,11 @@
+import AuthContextProvider from "@/context/AuthContext";
 import { montserrat } from "@/lib/font";
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
+import { ThirdwebProvider } from "thirdweb/react";
+
+
 
 export const metadata: Metadata = {
   title: "Savvy Circle",
@@ -19,7 +23,15 @@ export default function RootLayout({
       className={`${montserrat.variable} ${montserrat.className}`}
     >
       <body className="flex min-h-dvh flex-col">
-        <div className="grid flex-1">{children}</div>
+        <div className="grid flex-1">
+          <ThirdwebProvider>
+            <AuthContextProvider>
+
+              {children}
+            </AuthContextProvider>
+
+          </ThirdwebProvider>
+        </div>
       </body>
     </html>
   );
