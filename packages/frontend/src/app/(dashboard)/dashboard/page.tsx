@@ -19,11 +19,13 @@ import { routes } from "@/lib/routes";
 import { getContract } from "thirdweb";
 import { client } from "@/app/client";
 import { defineChain } from "thirdweb/chains";
-import { contractAddress } from "@/contract";
+import { abi, contractAddress } from "@/contract";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { useFetchGroup } from "@/hooks/useFetchGroup";
 import { useFetchGroups } from "@/hooks/useFetchGroups";
+import { useReadContract } from "thirdweb/react";
+
 
 // import EmptyState from "@/components/common/empty-state";
 
