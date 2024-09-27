@@ -273,7 +273,7 @@ const DepositPage = () => {
                     : successs
                       ? "Sucessful"
                       : errors
-                        ? "An error occured"
+                        ? "Successful"
                         : "Continue"}
                 </Button>
               </div>
