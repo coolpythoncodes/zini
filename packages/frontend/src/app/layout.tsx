@@ -5,8 +5,6 @@ import "@/styles/globals.css";
 import { type Metadata } from "next";
 import { ThirdwebProvider } from "thirdweb/react";
 
-
-
 export const metadata: Metadata = {
   title: "Savvy Circle",
   description:
@@ -22,14 +20,13 @@ export default function RootLayout({
       lang="en"
       className={`${montserrat.variable} ${montserrat.className}`}
     >
+      <head>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+      </head>
       <body className="flex min-h-dvh flex-col">
         <div className="grid flex-1">
           <ThirdwebProvider>
-            <AuthContextProvider>
-
-              {children}
-            </AuthContextProvider>
-
+            <AuthContextProvider>{children}</AuthContextProvider>
           </ThirdwebProvider>
         </div>
       </body>

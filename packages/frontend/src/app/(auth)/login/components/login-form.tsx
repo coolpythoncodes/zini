@@ -15,14 +15,19 @@ import { ConnectButton } from "thirdweb/react";
 import { inAppWallet } from "thirdweb/wallets";
 import { object, string, type InferType } from "yup";
 import { defineChain } from "thirdweb/chains";
-import { useActiveAccount, useActiveWallet, useReadContract } from "thirdweb/react";
+import {
+  useActiveAccount,
+  useActiveWallet,
+  useReadContract,
+} from "thirdweb/react";
 import { useContext, useEffect, useState } from "react";
 import { getContract } from "thirdweb";
 import { abi, contractAddress } from "@/contract";
 import { AuthContext, useAuthContext } from "@/context/AuthContext";
 import { createUser } from "@/actions/actions";
+import { PrismaClient } from "@prisma/client";
 
-
+// const prisma = new PrismaClient();
 
 const liskSepolia = defineChain(4202);
 
@@ -39,6 +44,7 @@ const LoginForm = () => {
   const wallet = useActiveWallet();
   const router = useRouter();
   const { userGroupId, setUserGroupId } = useAuthContext();
+  const [showSignUp, setShowSignUp] = useState(false);
 
   // useEffect(() => {
   //   if (account || wallet) {
@@ -66,18 +72,53 @@ const LoginForm = () => {
   } = useForm<FormData>({
     resolver: yupResolver(loginFormSchema),
   });
+
   const onSubmit = async (data: FormData) => {
-    console.log(data);
-    // router.replace(routes.dashboard);
-    const params = {
-      address: String(account?.address),
-      username: String(data.name)
+    try {
+      console.log(data);
+      // router.replace(routes.dashboard);
+      const params = {
+        address: String(account?.address),
+        username: String(data.name),
+      };
+
+      await createUser(params);
+    } catch (error) {
+      console.log(error);
     }
 
-    await createUser(params);
-
-    router.push("/dashboard")
+    router.push("/dashboard");
   };
+  // async function findUser() {
+  //   try {
+  //     const existingUser = await prisma.user.findFirst({
+  //       where: {
+  //         address: account?.address,
+  //       }
+  //     });
+  //     console.log(existingUser);
+  //     return existingUser;
+  //   } catch (error) {
+  //     console.error("Error finding user:", error);
+  //     return null;
+  //   }
+  // }
+
+  // useEffect(() => {
+  //   if (account) {
+  //     findUser().then((user) => {
+  //       console.log(user);
+  //       if (!user) {
+  //         setShowSignUp(true);
+  //       } else {
+  //         router.push("/dashboard");
+  //       }
+  //     }).catch((error) => {
+  //       console.error("Error in useEffect:", error);
+  //     });
+  //   }
+  // }, [account, router]);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-[21px]">
       <div className="space-y-4">
@@ -118,28 +159,29 @@ const LoginForm = () => {
           <FormErrorTextMessage errors={errors.phoneNumber} />
         </div> */}
       </div>
-      {account?.address && <Button
-      // onClick={onOpen} disabled={isOpen}
-      >
-        {isOpen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        Sign up
-      </Button>}
-      {!account && <ConnectButton
+      {account && (
+        <Button
+          className="bg-white text-black"
+          // onClick={onOpen} disabled={isOpen}
+        >
+          {isOpen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Sign up
+        </Button>
+      )}
+      <ConnectButton
         client={client}
         accountAbstraction={{
           chain: liskSepolia,
-          sponsorGas: true
+          sponsorGas: true,
         }}
         wallets={[
           inAppWallet({
             auth: {
-              options: [
-                "phone"
-              ]
-            }
-          })
+              options: ["phone", "email"],
+            },
+          }),
         ]}
-      />}
+      />
     </form>
   );
 };

@@ -5,7 +5,6 @@ import PageWrapper from "@/components/common/page-wrapper";
 import ElementList from "@/components/misc/element-list";
 import Link from "next/link";
 import DashboardHeader from "./components/dashbord-header";
-<<<<<<< HEAD
 import { getContract } from "thirdweb";
 import { client } from "@/app/client";
 import { defineChain } from "thirdweb/chains";
@@ -13,17 +12,16 @@ import { abi, contractAddress } from "@/contract";
 import { useAuthContext } from "@/context/AuthContext";
 import { useCallback, useEffect, useState } from "react";
 import { useFetchGroup } from "@/hooks/useFetchGroup";
-import { useReadContract } from "thirdweb/react";
+import { useActiveAccount, useReadContract } from "thirdweb/react";
+import Group from "./components/group";
 
-
-=======
 import { routes } from "@/lib/routes";
->>>>>>> a7751dd2c23654781342c4ebaabfbe74c701d829
 // import EmptyState from "@/components/common/empty-state";
 
 const DashboardPage = () => {
   const liskSepolia = defineChain(4202);
-  const { userGroupId } = useAuthContext()
+  // const { userGroupId } = useAuthContext()
+  const account = useActiveAccount();
   const [userGroup, setUserGroup] = useState<any>([]);
 
   const contract = getContract({
@@ -31,22 +29,20 @@ const DashboardPage = () => {
     chain: liskSepolia,
     address: contractAddress,
     abi: abi,
-  })
-
-  // const groupInfo = useCallback()
-  console.log(userGroupId);
-
-  const { data: groupsData, isLoading, error } = useReadContract({
-    contract,
-    method: "function getGroups(int256[]) view returns (tuple(uint256,uint256,uint256,uint256,uint256,string,address,uint256)[])",
-    params: [userGroupId],
   });
 
+  const {
+    data: _userGroupId,
+    isLoading: idLoadings,
+    refetch: refectUserGroupId,
+  } = useReadContract({
+    contract,
+    method: "function getUserGroups(address) returns (int256[])",
+    params: [account?.address || "0x00000000"],
+  });
 
-
-  console.log(`Result is given as`, groupsData);
-
-
+  // const groupInfo = useCallback()
+  console.log(_userGroupId);
 
   return (
     <main className="min-h-screen">
@@ -56,30 +52,25 @@ const DashboardPage = () => {
           <h1 className="py-4 text-base font-medium leading-[18px] text-[#0A0F29]">
             Saving groups
           </h1>
-          <div
-          // 456
-          // className="grid grid-cols-2 gap-x-4"
-          >
-            {/* <EmptyState text="Group details go here" /> */}
-            <ElementList
-              itemsCount={6}
-              rootClassName="grid grid-cols-2 gap-x-4 gap-y-2"
+          {_userGroupId ? (
+            <div
+            // 456
+            // className="grid grid-cols-2 gap-x-4"
             >
-              <Link href={routes.groupById("1")}>
-                <div className="space-y-8 rounded-[8px] border border-[#D7D9E4] bg-white p-4 shadow-[0px_4px_8px_0px_#0000000D]">
-                  <Icons.bitcoinBag className="h-10 w-10" />
-                  <div className="space-y-1 font-normal">
-                    <p className="text-xs leading-[14px] text-[#098C28]">
-                      #40,000
-                    </p>
-                    <p className="text-base leading-[18px] text-[#0A0F29]">
-                      Group 1
-                    </p>
-                  </div>
+              {/* <EmptyState text="Group details go here" /> */}
+              {_userGroupId && (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {_userGroupId?.map((id) => (
+                    <Group key={id.toString()} id={id} />
+                  ))}
                 </div>
-              </Link>
-            </ElementList>
-          </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p>Join a group in the telegram</p>
+            </div>
+          )}
         </section>
 
         <section className="space-y-2">

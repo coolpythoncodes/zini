@@ -19,13 +19,20 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type InferType, number, object, string } from "yup";
 import DepositModal from "./deposit-modal";
-import { useSendTransaction } from "thirdweb/react";
+import {
+  useActiveAccount,
+  useReadContract,
+  useSendBatchTransaction,
+  useSendTransaction,
+} from "thirdweb/react";
 import { ContractOptions, getContract, prepareContractCall } from "thirdweb";
 import { client } from "@/app/client";
-import { contractAddress } from "@/contract";
+import { abi, contractAddress } from "@/contract";
 import { defineChain } from "thirdweb/chains";
 import { bigint } from "zod";
 import { contractInstance } from "@/lib/libs";
+import Group from "../components/group";
+import { tokenAddress } from "@/token";
 
 const depositSchema = object({
   group: string().required("group is required"),
@@ -41,47 +48,103 @@ type FormData = InferType<typeof depositSchema>;
 const DepositPage = () => {
   const { setPage } = useUiStore();
   const { onOpen, onClose, isOpen } = useDisclosure();
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<string>("");
 
-  const { mutate: sendTransaction } = useSendTransaction();
+  const {
+    mutate: sendBatch,
+    data: transactionResult,
+    isPending: pending,
+    isError: error,
+    isSuccess: success,
+  } = useSendBatchTransaction();
 
+  const {
+    mutate: sendTransaction,
+    data: result,
+    isPending: pendings,
+    isError: errors,
+    isSuccess: successs,
+  } = useSendTransaction();
 
-  const liskSepolia = defineChain(4202)
+  const account = useActiveAccount();
 
+  const liskSepolia = defineChain(4202);
+
+  const contract = getContract({
+    client: client,
+    chain: liskSepolia,
+    address: contractAddress,
+    abi: abi,
+  });
+
+  const tokenContract = getContract({
+    client: client,
+    chain: liskSepolia,
+    address: tokenAddress,
+  }) as Readonly<ContractOptions<[]>>;
 
   const onClick = async (amount: bigint) => {
-    const tx1 = prepareContractCall({
-      contract: contractInstance,
-      method: "function approve(address, uint256) returns(bool)",
-      params: [contractAddress, amount]
-    })
+    try {
+      console.log("Transferring to client");
 
-    const tx2 = prepareContractCall({
-      contract: contractInstance,
-      method: "function deposit(int256)",
-      params: [0n]
-    })
+      const tx1 = prepareContractCall({
+        contract: tokenContract,
+        method: "function approve(address, uint256) returns(bool)",
+        params: [contractAddress, amount],
+      });
 
-    sendTransaction(tx1)
-  }
+      // const tx2 = prepareContractCall({
+      //   contract: contractInstance,
+      //   method: "function deposit(int256)",
+      //   params: [1n]
+      // })
+
+      // sendBatch([tx1, tx2]);
+      sendTransaction(tx1);
+      console.log(transactionResult);
+
+      // sendTransaction(tx2);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const {
+    data: _userGroupId,
+    isLoading: idLoadings,
+    refetch: refectUserGroupId,
+  } = useReadContract({
+    contract,
+    method: "function getUserGroups(address) returns (int256[])",
+    params: [account?.address || "0x00000000"],
+  });
+
+  // const groupInfo = useCallback()
+  console.log(_userGroupId);
 
   const {
     register,
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
+    formState: {},
   } = useForm<FormData>({
     resolver: yupResolver(depositSchema),
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log(data);
-    onOpen();
+  const onSubmit = () => {
+    // console.log(data);
+    // onOpen();
+    onClick(BigInt(amount));
   };
 
-  const handleAmountInput = (value: number) => {
-    setValue("amount", value);
+  const handleAmountInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    console.log(value);
+
+    if (/^\d*\.?\d*$/.test(value)) {
+      setAmount(value);
+    }
   };
 
   useEffect(() => {
@@ -105,7 +168,7 @@ const DepositPage = () => {
               Select a group to make a deposit
             </h1>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <div>
+              {/* <div>
                 <Controller
                   name="group"
                   control={control}
@@ -149,7 +212,32 @@ const DepositPage = () => {
                   )}
                 />
                 <FormErrorTextMessage errors={errors.group} />
-              </div>
+              </div> */}
+
+              <section className="space-y-2">
+                <h1 className="py-4 text-base font-medium leading-[18px] text-[#0A0F29]">
+                  Saving groups
+                </h1>
+                {_userGroupId ? (
+                  <div
+                  // 456
+                  // className="grid grid-cols-2 gap-x-4"
+                  >
+                    {/* <EmptyState text="Group details go here" /> */}
+                    {_userGroupId && (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {_userGroupId?.map((id) => (
+                          <Group key={id.toString()} id={id} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p>Join a group in the telegram</p>
+                  </div>
+                )}
+              </section>
 
               {/* </div> */}
               <div className="space-y-3 rounded-lg border border-[#D7D9E4] bg-[#F8FDF5] px-4 py-7 shadow-[0px_4px_8px_0px_#0000000D]">
@@ -162,8 +250,9 @@ const DepositPage = () => {
                       placeholder="Enter deposit amount"
                       className="tect-base font-medium text-[#696F8C] placeholder:text-[#696F8C]"
                       value={amount}
+                      onChange={handleAmountInput}
                     />
-                    <FormErrorTextMessage errors={errors.amount} />
+                    {/* <FormErrorTextMessage errors={errors.amount} /> */}
                   </div>
 
                   <div className="flex items-center justify-center gap-x-5">
@@ -172,14 +261,21 @@ const DepositPage = () => {
                         key={`amount-${index}`}
                         type="button"
                         className="h-8 w-[67px] text-xs font-normal leading-[14px] text-[#696F8C]"
-                        onClick={() => handleAmountInput(amount)}
                       >
                         #{numeral(amount).format("0,0")}
                       </Button>
                     ))}
                   </div>
                 </div>
-                <Button className="bg-[#4A9F17]">Continue</Button>
+                <Button className="bg-[#4A9F17]" onClick={onSubmit}>
+                  {pendings
+                    ? "Pending..."
+                    : successs
+                      ? "Sucessful"
+                      : errors
+                        ? "An error occured"
+                        : "Continue"}
+                </Button>
               </div>
             </form>
           </>
